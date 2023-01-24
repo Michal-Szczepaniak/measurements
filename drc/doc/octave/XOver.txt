@@ -1,0 +1,46 @@
+ls = loadpcm('S:\Room\1038B-2013-12-28-XOTest\2\lsub.pcm');
+lm = loadpcm('S:\Room\1038B-2013-12-28-XOTest\2\lmain.pcm');
+rs = loadpcm('S:\Room\1038B-2013-12-28-XOTest\2\rsub.pcm');
+rm = loadpcm('S:\Room\1038B-2013-12-28-XOTest\2\rmain.pcm');
+
+[mv, mi ] = max(abs(lm));
+
+ls = ls((mi-2048):(mi+2^17));
+lm = lm((mi-2048):(mi+2^17));
+rs = rs((mi-2048):(mi+2^17));
+rm = rm((mi-2048):(mi+2^17));
+
+in = length(ls);
+
+dc = [ zeros(2048,1); 1; zeros(2^17,1) ];
+
+# Linear phase
+
+sd = 0; sf = 25; md = 160; mf = 65; mg = 1; sg = 4; so = 0; mo = 0; sl = 4095; ml = 4095; sa = 300; ma = 300; semilogx(linspace(0.001,22050,in/2),20 * log10([abs(fft(xosim(44100,ls,sg,sd,sf,sl,sa,so,lm,mg,md,mf,ml,ma,mo))(1:(in/2))),abs(fft(xosim(44100,rs,sg,sd,sf,sl,sa,so,rm,mg,md,mf,ml,ma,mo))(1:(in/2))),abs(fft(xosim(44100,dc,sg,sd,sf,sl,sa,so,dc,mg,md,mf,ml,ma,mo))(1:(in/2))),abs(fft(xosim(44100,dc,0,sd,sf,sl,sa,so,dc,mg,md,mf,ml,ma,mo))(1:(in/2))),abs(fft(xosim(44100,dc,sg,sd,sf,sl,sa,so,dc,0,md,mf,ml,ma,mo))(1:(in/2)))]));grid("on");axis([10 1000 -90 10]); tics("x",logspace(1,3,15),num2str(logspace(1,3,15),"%.1f\n"))
+sd = 0; sf = 25; md = 160; mf = 65; mg = 1; sg = 4; so = 0; mo = 0; sl = 4095; ml = 4095; sa = 300; ma = 300; semilogx(linspace(0.001,22050,in/2),20 * log10([abs(fft(xosim(44100,dc,sg,sd,sf,sl,sa,so,dc,mg,md,mf,ml,ma,mo))(1:(in/2))),abs(fft(xosim(44100,dc,0,sd,sf,sl,sa,so,dc,mg,md,mf,ml,ma,mo))(1:(in/2))),abs(fft(xosim(44100,dc,sg,sd,sf,sl,sa,so,dc,0,md,mf,ml,ma,mo))(1:(in/2)))]));grid("on");axis([10 1000 -90 10]); tics("x",logspace(1,3,15),num2str(logspace(1,3,15),"%.1f\n"))
+
+savepcm(lfxosim(44100,ls,sg,sd,sf,sl,sa,so,lm,mg,md,mf,ml,ma,mo),'S:\Room\1038B-2013-12-28-XOTest\lsim.pcm'); savepcm(lfxosim(44100,rs,sg,sd,sf,sl,sa,so,rm,mg,md,mf,ml,ma,mo),'S:\Room\1038B-2013-12-28-XOTest\rsim.pcm');
+
+# Definitivo
+
+sd = 0; sf = 25; md = 160; mf = 65; mg = 1; sg = 4; so = 0; mo = 0; sl = 4095; ml = 4095; sa = 300; ma = 300;
+
+[lp, hp] = mklfxo(44100,sg,sd,sf,sl,sa,so,mg,md,mf,ml,ma,mo);
+
+savepcm(postpad(lp,8192),'S:\Room\1038B-2013-12-28-XOTest\lp.pcm');
+savepcm(postpad(hp,8192),'S:\Room\1038B-2013-12-28-XOTest\hp.pcm');
+
+# Minimum phase
+
+sd = 0; sf = 25; md = 0; mf = 80; mg = 1; sg = -4; so = 2; mo = 2; sl = 8191; ml = 8191; fa = 0; semilogx(linspace(0.001,22050,in/2),20 * log10([abs(fft(lrxosim(44100,ls,sg,sd,sf,so,sl,fa,lm,mg,md,mf,mo,ml,fa))(1:(in/2))),abs(fft(lrxosim(44100,rs,sg,sd,sf,so,sl,fa,rm,mg,md,mf,mo,ml,fa))(1:(in/2))),abs(fft(lrxosim(44100,dc,0,sd,sf,so,sl,fa,dc,mg,md,mf,mo,ml,fa))(1:(in/2))),abs(fft(lrxosim(44100,dc,sg,sd,sf,so,sl,fa,dc,0,md,mf,mo,ml,fa))(1:(in/2))),abs(fft(lrxosim(44100,dc,sg,sd,sf,so,sl,fa,dc,mg,md,mf,mo,ml,fa))(1:(in/2)))]));grid("on");axis([10 1000 -90 10]); tics("x",logspace(1,3,15),num2str(logspace(1,3,15),"%.1f\n"))
+
+savepcm(lrxosim(44100,ls,sg,sd,sf,so,sl,fa,lm,mg,md,mf,mo,ml,fa),'S:\Room\1038B-2013-12-28-XOTest\lsim.pcm'); savepcm(lrxosim(44100,rs,sg,sd,sf,so,sl,fa,rm,mg,md,mf,mo,ml,fa),'S:\Room\1038B-2013-12-28-XOTest\rsim.pcm');
+
+# Definitivo
+
+sd = 0; sf = 25; md = 0; mf = 80; mg = 1; sg = -4; so = 2; mo = 2; sl = 8191; ml = 8191; fa = 0;
+
+[lp, hp] = mklrxo(44100,sg,sd,sf,so,sl,fa,mg,md,mf,mo,ml,fa);
+
+savepcm(postpad(lp,8192),'S:\Room\1038B-2013-12-28-XOTest\lp.pcm');
+savepcm(postpad(hp,8192),'S:\Room\1038B-2013-12-28-XOTest\hp.pcm');
