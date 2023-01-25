@@ -45,7 +45,7 @@ void record(std::vector<int8_t>* audio, ALSACaptureDevice* captureDevice, unsign
 
     while (!*stop) {
         captureDevice->captureIntoBuffer(buffer, frames);
-        for (int i = 0; i < frames * bytesPerFrame * channelsCount; i++) {
+        for (int i = 0; i < frames * bytesPerFrame; i++) {
             if (channelsCount > 1 && i/bytesPerFrame % channelsCount != selectedCaptureChannel) {
                 continue;
             }
@@ -195,8 +195,8 @@ int main(int argc, char** argv) {
     auto subwooferSweep = generatedSubwooferSweep.first;
     auto inverseSubwooferSweep = generatedSubwooferSweep.second;
 
-    std::vector<int8_t> sweep16 = Reformatter::convertFromFloat(sweep, 16);
-    std::vector<int8_t> subwooferSweep16 = Reformatter::convertFromFloat(subwooferSweep, 16);
+    std::vector<int8_t> sweepAudio = Reformatter::convertFromFloat(sweep, playbackFormat);
+    std::vector<int8_t> subwooferSweepAudio = Reformatter::convertFromFloat(subwooferSweep, playbackFormat);
     std::vector<int8_t> sweepRecordingBuffer{};
 
     ALSAPlaybackDevice playbackDevice(
@@ -223,7 +223,7 @@ int main(int argc, char** argv) {
         for (int channel = 0; channel < playbackChannels; channel++) {
             bool stopRecording = false;
             bool startRecording = false;
-            std::thread playbackThread(play, channel == subwooferChannel ? subwooferSweep16 : sweep16, &playbackDevice, channel, &startRecording);
+            std::thread playbackThread(play, channel == subwooferChannel ? subwooferSweepAudio : sweepAudio, &playbackDevice, channel, &startRecording);
             std::thread recordThread(record, &sweepRecordingBuffer, &captureDevice, selectedCaptureChannel, &stopRecording, &startRecording);
             std::this_thread::sleep_for(std::chrono::seconds(sweepDuration+(sweepSilence*2)));
             playbackThread.join();
@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
             stopRecording = true;
             recordThread.join();
 
-            recordings[channel].push_back(Reformatter::convertToFloat(sweepRecordingBuffer, 24));
+            recordings[channel].push_back(Reformatter::convertToFloat(sweepRecordingBuffer, captureFormat));
             sweepRecordingBuffer.clear();
         }
 
