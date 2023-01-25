@@ -158,6 +158,8 @@ int main(int argc, char** argv) {
     unsigned int freqEnd{};
     unsigned int playbackFormat{};
     unsigned int captureFormat{};
+    unsigned int subwooferChannel{};
+    float subwooferVolume{};
     float sweepVolume{};
     std::string playbackDeviceName;
     std::string captureDeviceName;
@@ -179,7 +181,9 @@ int main(int argc, char** argv) {
     app.add_option("-e,--freq-end", freqEnd, "End of sweep frequency")->default_val(20000);
     app.add_option("--sweep-duration", sweepDuration, "Duration of the sweep")->default_val(45);
     app.add_option("--sweep-silence", sweepSilence, "Silence before/after sweep")->default_val(2);
-    app.add_option("-v,--sweep-volume", sweepVolume, "Volume of the sweep sweep, quite arbitrary from 0-1")->default_val(0.1);
+    app.add_option("-v,--sweep-volume", sweepVolume, "Volume of the sweep, quite arbitrary from 0-1")->default_val(0.1);
+    app.add_option("--subwoofer-channel", subwooferChannel, "Subwoofer's channel/index")->default_val(5);
+    app.add_option("--subwoofer-volume", subwooferVolume, "Volume of the subwoofer sweep, quite arbitrary from 0-1")->default_val(0.1);
 
     CLI11_PARSE(app, argc, argv);
 
@@ -187,8 +191,12 @@ int main(int argc, char** argv) {
     auto generatedSweep = sweepGenerator.generate(rate, sweepVolume, freqStart, freqEnd, sweepDuration, sweepSilence, 0.05, 0.005);
     auto sweep = generatedSweep.first;
     auto inverseSweep = generatedSweep.second;
+    auto generatedSubwooferSweep = sweepGenerator.generate(rate, subwooferVolume, freqStart, freqEnd, sweepDuration, sweepSilence, 0.05, 0.005);
+    auto subwooferSweep = generatedSubwooferSweep.first;
+    auto inverseSubwooferSweep = generatedSubwooferSweep.second;
 
     std::vector<int8_t> sweep16 = Reformatter::convertFromFloat(sweep, 16);
+    std::vector<int8_t> subwooferSweep16 = Reformatter::convertFromFloat(subwooferSweep, 16);
     std::vector<int8_t> sweepRecordingBuffer{};
 
     ALSAPlaybackDevice playbackDevice(
@@ -215,7 +223,7 @@ int main(int argc, char** argv) {
         for (int channel = 0; channel < playbackChannels; channel++) {
             bool stopRecording = false;
             bool startRecording = false;
-            std::thread playbackThread(play, sweep16, &playbackDevice, channel, &startRecording);
+            std::thread playbackThread(play, channel == subwooferChannel ? subwooferSweep16 : sweep16, &playbackDevice, channel, &startRecording);
             std::thread recordThread(record, &sweepRecordingBuffer, &captureDevice, selectedCaptureChannel, &stopRecording, &startRecording);
             std::this_thread::sleep_for(std::chrono::seconds(sweepDuration+(sweepSilence*2)));
             playbackThread.join();
@@ -237,10 +245,16 @@ int main(int argc, char** argv) {
     playbackDevice.close();
 
     for (auto it = recordings.begin(); it != recordings.end(); it++) {
-        std::vector<float> ir = ImpulseResponseConverter::convert(recordings[it->first][0], inverseSweep);
+        std::vector<float> ir = ImpulseResponseConverter::convert(
+            recordings[it->first][0],
+            it->first == subwooferChannel ? inverseSubwooferSweep : inverseSweep
+        );
 
         for (int i = 1; i < it->second.size(); i++) {
-            auto tmpIr = ImpulseResponseConverter::convert(recordings[it->first][i], inverseSweep);
+            auto tmpIr = ImpulseResponseConverter::convert(
+                recordings[it->first][i],
+                it->first == subwooferChannel ? inverseSubwooferSweep : inverseSweep
+            );
 
             ir = sumImpulseResponses(ir, tmpIr);
         }
