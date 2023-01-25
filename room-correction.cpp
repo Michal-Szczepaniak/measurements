@@ -158,6 +158,8 @@ int main(int argc, char** argv) {
     unsigned int freqEnd{};
     unsigned int playbackFormat{};
     unsigned int captureFormat{};
+    unsigned int subwooferFreqStart{};
+    unsigned int subwooferFreqEnd{};
     int subwooferChannel{};
     float subwooferVolume{};
     float sweepVolume{};
@@ -182,8 +184,10 @@ int main(int argc, char** argv) {
     app.add_option("--sweep-duration", sweepDuration, "Duration of the sweep")->default_val(45);
     app.add_option("--sweep-silence", sweepSilence, "Silence before/after sweep")->default_val(2);
     app.add_option("-v,--sweep-volume", sweepVolume, "Volume of the sweep, quite arbitrary from 0-1")->default_val(0.1);
-    app.add_option("--subwoofer-channel", subwooferChannel, "Subwoofer's channel/index")->default_val(-1);
-    app.add_option("--subwoofer-volume", subwooferVolume, "Volume of the subwoofer sweep, quite arbitrary from 0-1")->default_val(0.1);
+    app.add_option("--lfe-channel", subwooferChannel, "Subwoofer's channel/index")->default_val(-1);
+    app.add_option("--lfe-volume", subwooferVolume, "Volume of the subwoofer sweep, quite arbitrary from 0-1")->default_val(0.1);
+    app.add_option("--lfe-freq-start", subwooferFreqStart, "Start of subwoofer's sweep frequency")->default_val(10);
+    app.add_option("--lfe-freq-end", subwooferFreqEnd, "End of subwoofer's sweep frequency")->default_val(200);
 
     CLI11_PARSE(app, argc, argv);
 
@@ -191,7 +195,7 @@ int main(int argc, char** argv) {
     auto generatedSweep = sweepGenerator.generate(rate, sweepVolume, freqStart, freqEnd, sweepDuration, sweepSilence, 0, 0);
     auto sweep = generatedSweep.first;
     auto inverseSweep = generatedSweep.second;
-    auto generatedSubwooferSweep = sweepGenerator.generate(rate, subwooferVolume, freqStart, freqEnd, sweepDuration, sweepSilence, 0.05, 0.005);
+    auto generatedSubwooferSweep = sweepGenerator.generate(rate, subwooferVolume, subwooferFreqStart, subwooferFreqEnd, sweepDuration, sweepSilence, 0, 0);
     auto subwooferSweep = generatedSubwooferSweep.first;
     auto inverseSubwooferSweep = generatedSubwooferSweep.second;
 
