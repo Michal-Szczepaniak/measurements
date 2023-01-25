@@ -188,7 +188,7 @@ int main(int argc, char** argv) {
     CLI11_PARSE(app, argc, argv);
 
     SweepGenerator sweepGenerator;
-    auto generatedSweep = sweepGenerator.generate(rate, sweepVolume, freqStart, freqEnd, sweepDuration, sweepSilence, 0.05, 0.005);
+    auto generatedSweep = sweepGenerator.generate(rate, sweepVolume, freqStart, freqEnd, sweepDuration, sweepSilence, 0, 0);
     auto sweep = generatedSweep.first;
     auto inverseSweep = generatedSweep.second;
     auto generatedSubwooferSweep = sweepGenerator.generate(rate, subwooferVolume, freqStart, freqEnd, sweepDuration, sweepSilence, 0.05, 0.005);
