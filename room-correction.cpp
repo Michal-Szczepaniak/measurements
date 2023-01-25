@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <thread>
 #include <string>
-#include <fstream>
 #include <iostream>
 #include "ImpulseResponseConverter.h"
 
@@ -15,6 +14,7 @@ void play(std::vector<int8_t> audio, ALSAPlaybackDevice* playbackDevice, int cha
     unsigned int frames = playbackDevice->getFrames();
     auto buffer = (int8_t *) playbackDevice->allocateBufferForSingleChannel();
     unsigned int channels = playbackDevice->getChannels();
+    unsigned int bytesPerFrame = playbackDevice->getBytesPerFrame()/channels;
     playbackDevice->prepare();
 
     while (audio.size() > i) {
@@ -22,11 +22,11 @@ void play(std::vector<int8_t> audio, ALSAPlaybackDevice* playbackDevice, int cha
             *start = true;
         }
 
-        for (int j = 0; j < frames * channels; j++, i++) {
+        for (int j = 0; j < frames * bytesPerFrame; j++, i++) {
             buffer[j] = audio[i];
         }
 
-        playbackDevice->playFromBufferOnChannel(buffer, frames, 2, channel);
+        playbackDevice->playFromBufferOnChannel(buffer, frames, bytesPerFrame, channel);
     }
 
     playbackDevice->drain();
