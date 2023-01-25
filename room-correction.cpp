@@ -223,7 +223,7 @@ int main(int argc, char** argv) {
         for (int channel = 0; channel < playbackChannels; channel++) {
             bool stopRecording = false;
             bool startRecording = false;
-            std::thread playbackThread(play, channel == subwooferChannel ? subwooferSweepAudio : sweepAudio, &playbackDevice, channel, &startRecording);
+            std::thread playbackThread(play, channel == subwooferChannel ? sweepAudio : sweepAudio, &playbackDevice, channel, &startRecording);
             std::thread recordThread(record, &sweepRecordingBuffer, &captureDevice, selectedCaptureChannel, &stopRecording, &startRecording);
             std::this_thread::sleep_for(std::chrono::seconds(sweepDuration+(sweepSilence*2)));
             playbackThread.join();
@@ -247,13 +247,13 @@ int main(int argc, char** argv) {
     for (auto it = recordings.begin(); it != recordings.end(); it++) {
         std::vector<float> ir = ImpulseResponseConverter::convert(
             recordings[it->first][0],
-            it->first == subwooferChannel ? inverseSubwooferSweep : inverseSweep
+            it->first == subwooferChannel ? inverseSweep : inverseSweep
         );
 
         for (int i = 1; i < it->second.size(); i++) {
             auto tmpIr = ImpulseResponseConverter::convert(
                 recordings[it->first][i],
-                it->first == subwooferChannel ? inverseSubwooferSweep : inverseSweep
+                it->first == subwooferChannel ? inverseSweep : inverseSweep
             );
 
             ir = sumImpulseResponses(ir, tmpIr);
