@@ -34,16 +34,21 @@ void play(std::vector<int8_t> audio, ALSAPlaybackDevice* playbackDevice, int cha
     free(buffer);
 }
 
-void record(std::vector<int8_t>* audio, ALSACaptureDevice* captureDevice, bool* stop, bool *start) {
+void record(std::vector<int8_t>* audio, ALSACaptureDevice* captureDevice, unsigned int selectedCaptureChannel, bool* stop, bool *start) {
     unsigned int frames = captureDevice->getFrames();
     auto buffer = (int8_t *) captureDevice->allocateBuffer();
+    unsigned int channelsCount = captureDevice->getChannels();
+    unsigned int bytesPerFrame = captureDevice->getBytesPerFrame();
     *stop = false;
     while (!*start) continue;
     captureDevice->prepare();
 
     while (!*stop) {
         captureDevice->captureIntoBuffer(buffer, frames);
-        for (int i = 0; i < frames*captureDevice->getBytesPerFrame(); i++) {
+        for (int i = 0; i < frames * bytesPerFrame * channelsCount; i++) {
+            if (channelsCount > 1 && i/bytesPerFrame % channelsCount != selectedCaptureChannel) {
+                continue;
+            }
             audio->push_back(buffer[i]);
         }
     }
@@ -141,6 +146,8 @@ typedef std::map<unsigned int, std::vector<std::vector<float>>> Recordings;
 
 int main(int argc, char** argv) {
     unsigned int playbackChannels{};
+    unsigned int captureChannels{};
+    unsigned int selectedCaptureChannel{};
     unsigned int playbackFrames{};
     unsigned int captureFrames{};
     unsigned int rate{};
@@ -159,7 +166,9 @@ int main(int argc, char** argv) {
 
     app.add_option("-P,--playback", playbackDeviceName, "Alsa device to play audio on")->required(true);
     app.add_option("-C,--capture", captureDeviceName, "Alsa device to capture audio on")->required(true);
-    app.add_option("-c,--channels", playbackChannels, "Alsa playback device channel count")->default_val(2);
+    app.add_option("--playback-channels", playbackChannels, "Alsa playback device channel count")->default_val(2);
+    app.add_option("--capture-channels", captureChannels, "Alsa capture device channel count")->default_val(1);
+    app.add_option("--selected-capture-channel", selectedCaptureChannel, "Alsa capture device channel (we can record only one)")->default_val(0);
     app.add_option("--playback-frames", playbackFrames, "Alsa playback device frames")->default_val(64);
     app.add_option("--capture-frames", captureFrames, "Alsa capture device frames")->default_val(64);
     app.add_option("--playback-format", playbackFormat, "Alsa capture device frames")->default_val(16);
@@ -189,7 +198,13 @@ int main(int argc, char** argv) {
         playbackFrames,
         intFormatToAlsaFormat(playbackFormat)
     );
-    ALSACaptureDevice captureDevice(captureDeviceName, rate, 1, captureFrames, intFormatToAlsaFormat(captureFormat));
+    ALSACaptureDevice captureDevice(
+        captureDeviceName,
+        rate,
+        captureChannels,
+        captureFrames,
+        intFormatToAlsaFormat(captureFormat)
+    );
 
     Recordings recordings;
     playbackDevice.open();
@@ -201,7 +216,7 @@ int main(int argc, char** argv) {
             bool stopRecording = false;
             bool startRecording = false;
             std::thread playbackThread(play, sweep16, &playbackDevice, channel, &startRecording);
-            std::thread recordThread(record, &sweepRecordingBuffer, &captureDevice, &stopRecording, &startRecording);
+            std::thread recordThread(record, &sweepRecordingBuffer, &captureDevice, selectedCaptureChannel, &stopRecording, &startRecording);
             std::this_thread::sleep_for(std::chrono::seconds(sweepDuration+(sweepSilence*2)));
             playbackThread.join();
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
