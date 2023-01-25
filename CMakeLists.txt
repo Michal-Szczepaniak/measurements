@@ -14,3 +14,5 @@ add_executable(measurements
         )
 
 target_link_libraries(measurements asound pthread)
+
+install(TARGETS measurements DESTINATION bin)
