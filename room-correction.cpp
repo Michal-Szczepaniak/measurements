@@ -223,7 +223,7 @@ int main(int argc, char** argv) {
         for (int channel = 0; channel < playbackChannels; channel++) {
             bool stopRecording = false;
             bool startRecording = false;
-            std::thread playbackThread(play, channel == subwooferChannel ? sweepAudio : sweepAudio, &playbackDevice, channel, &startRecording);
+            std::thread playbackThread(play, channel == subwooferChannel ? subwooferSweepAudio : sweepAudio, &playbackDevice, channel, &startRecording);
             std::thread recordThread(record, &sweepRecordingBuffer, &captureDevice, selectedCaptureChannel, &stopRecording, &startRecording);
             std::this_thread::sleep_for(std::chrono::seconds(sweepDuration+(sweepSilence*2)));
             playbackThread.join();
