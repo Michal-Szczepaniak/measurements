@@ -247,13 +247,13 @@ int main(int argc, char** argv) {
     for (auto it = recordings.begin(); it != recordings.end(); it++) {
         std::vector<float> ir = ImpulseResponseConverter::convert(
             recordings[it->first][0],
-            it->first == subwooferChannel ? inverseSweep : inverseSweep
+            it->first == subwooferChannel ? inverseSubwooferSweep : inverseSweep
         );
 
         for (int i = 1; i < it->second.size(); i++) {
             auto tmpIr = ImpulseResponseConverter::convert(
                 recordings[it->first][i],
-                it->first == subwooferChannel ? inverseSweep : inverseSweep
+                it->first == subwooferChannel ? inverseSubwooferSweep : inverseSweep
             );
 
             ir = sumImpulseResponses(ir, tmpIr);
