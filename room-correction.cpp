@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
     unsigned int freqEnd{};
     unsigned int playbackFormat{};
     unsigned int captureFormat{};
-    unsigned int subwooferChannel{};
+    int subwooferChannel{};
     float subwooferVolume{};
     float sweepVolume{};
     std::string playbackDeviceName;
@@ -182,7 +182,7 @@ int main(int argc, char** argv) {
     app.add_option("--sweep-duration", sweepDuration, "Duration of the sweep")->default_val(45);
     app.add_option("--sweep-silence", sweepSilence, "Silence before/after sweep")->default_val(2);
     app.add_option("-v,--sweep-volume", sweepVolume, "Volume of the sweep, quite arbitrary from 0-1")->default_val(0.1);
-    app.add_option("--subwoofer-channel", subwooferChannel, "Subwoofer's channel/index")->default_val(5);
+    app.add_option("--subwoofer-channel", subwooferChannel, "Subwoofer's channel/index")->default_val(-1);
     app.add_option("--subwoofer-volume", subwooferVolume, "Volume of the subwoofer sweep, quite arbitrary from 0-1")->default_val(0.1);
 
     CLI11_PARSE(app, argc, argv);
